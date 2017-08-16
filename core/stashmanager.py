@@ -8,6 +8,7 @@ from multiprocessing import Pool
 import time
 import wave
 
+
 class StashManager:
     def __init__(self, condition):
         self.url = None
@@ -15,13 +16,6 @@ class StashManager:
         self.condition = condition
         self.stash = None
         self.persist = True
-        # name = glob.glob("alert.wav")
-        # self.song = AudioSegment.from_wav("assets/alert.wav")
-        # play(self.song)
-        # winsound.PlaySound("", winsound.SND_ALIAS)
-        # asd = wave.open("assets/alert.wav")
-        # winsound.Beep(400, 150)
-        # self.mp_pool = Pool(process=2)
 
     def acquire_latest_id(self):
         stats = requests.get("http://poe.ninja/stats")
@@ -30,13 +24,30 @@ class StashManager:
         return
 
     def acquire_stash_sync(self, stash_url):
-        stash = requests.get(stash_url)
-        self.stash = json.loads(stash.content)
-        self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
-        print(self.stash["next_change_id"])
+        response = requests.get(stash_url)
+        response = json.loads(response.content)
+
+        ninja_id = self.acquire_new_id()
+        split_ninja_id = ninja_id.split('-')
+        last_section_id = ninja_id[len(split_ninja_id) - 1]
+        response_id = response["next_change_id"].split('-')
+        last_response_id = response_id[len(response_id) - 1]
+
+        # ninja_next_change_id = requests.get("http://api.poe.ninja/api/Data/GetStats")
+        # ninja_next_change_id = json.loads(ninja_next_change_id)["nextChangeId"]
+        if "error" not in response:
+            self.stash = response
+            if int(last_section_id) - int(last_response_id) > 30:
+                self.stash["next_change_id"] = ninja_id
+            self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
+            print(self.stash["next_change_id"])
+        else:
+            time.sleep(0.2)
+
 
     def set_url(self, url):
         self.url = url
+
 
     def sync(self, cond, stash_url, queue):
         logging.debug("Syncing from poe")
@@ -46,7 +57,8 @@ class StashManager:
                 self.acquire_stash_sync(self.url)
                 queue.put(self.stash)
                 cond.notifyAll()
-                time.sleep(1)
+                time.sleep(0.5)
+
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -56,11 +68,7 @@ class StashManager:
     def get_stash(self, cond, queue):
         logging.debug("Starting get_stash thread.")
         t = threading.currentThread()
-        # while self.persist:
-        #     with cond:
-        #         cond.wait()
-        #         logging.debug("Resource available to requester")
-        #         print("something: " + queue.get()["next_change_id"])
+
         while self.persist:
             print("something: " + queue.get()["next_change_id"])
             stash_data = queue.get()["stashes"]
@@ -78,17 +86,24 @@ class StashManager:
                                 print(item["note"])
                                 note = item["note"].split(" ")
                                 if note[2] == "chaos" and int(note[1]) <= 9:
-                                    whisper_message = "@" + stash["lastCharacterName"] + " Hi, I would like to buy your " \
-                                                      + item_name + " for " + note[1] + " " + note[2] + " in "\
-                                                      + item["league"] + "(stash tab " + "\""+stash["stash"] + "\";"\
-                                                      + "position: left " + str(item["x"]) + ", top " + str(item["y"]) + ")"
+                                    whisper_message = "@" + stash[
+                                        "lastCharacterName"] + " Hi, I would like to buy your " \
+                                                      + item_name + " for " + note[1] + " " + note[2] + " in " \
+                                                      + item["league"] + "(stash tab " + "\"" + stash["stash"] + "\";" \
+                                                      + "position: left " + str(item["x"]) + ", top " + str(
+                                        item["y"]) + ")"
                                     pyperclip.copy(whisper_message)
                                     winsound.Beep(400, 150)
                                     print(whisper_message)
-                                # @Perry_Berry Hi, I would like to buy your The Dapper Prodigy listed for 9 chaos in Harbinger (stash tab "~b/o 3 chaos"; position: left 10, top 12)
-                # return self.stashBlackheart
+                                    # @Perry_Berry Hi, I would like to buy your The Dapper Prodigy listed for 9 chaos in Harbinger (stash tab "~b/o 3 chaos"; position: left 10, top 12)
+                                    # return self.stashBlackheart
+
 
     # def scan_divination(self):
 
     def getget(self):
         return self.stash
+
+
+    def acquire_new_id(self):
+        return json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]

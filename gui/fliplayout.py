@@ -1,3 +1,5 @@
+import json
+import requests
 from tkinter import *
 from tkinter.ttk import *
 import threading
@@ -18,13 +20,6 @@ class FlipLayout:
         list_box = Listbox(self.mainframe, listvariable=self.item_list)
         # Label
         title_label = Label(self.mainframe, text="poeFriend")
-        # ttk.Label(window, text="Test").grid()
-        # # label.pack()
-        #
-        # # Entry
-        # # entry.pack()
-        #
-        #
         title_label.grid(column=3, row=0)
         watched_items_label.grid(column=0, row=1, columnspan=1)
         list_box.grid(column=1, row=1, columnspan=4, rowspan=6)
@@ -74,22 +69,24 @@ class FlipLayout:
         Entry(stash_url_input, textvariable=latest_url).pack()
         Button(stash_url_input, command=lambda: self.save_latest_url(stash_url_input, latest_url.get(), condition, queue)).pack()
 
+        self.stash_manager.set_url(latest_url)
+        latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]
+        latest_url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + latest_change_id
+        t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(condition, latest_url, queue))
+        t1.start()
+        stash_url_input.destroy()
+
     def add_to_list(self, item_name):
         self.item_manager.add_item(item_name.get())
         self.item_list.set(value=self.item_manager.get_items())
 
     def save_latest_url(self, window, latest_url, cond, queue):
         self.stash_manager.set_url(latest_url)
-        # condition = threading.Condition()
-        t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(cond, latest_url, queue))
-        t1.start()
-        # while True:
-        #     self.stash_manager.single_refresh(latest_url)
-        window.destroy()
+        latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats"))["nextChangeId"]
+
 
     def init_get_stash_button(self, cond, queue):
         t2 = threading.Thread(name="t2", target=self.stash_manager.get_stash, args=(cond, queue,))
         Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
         return
 
-    # def start_scan(self):
