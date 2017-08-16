@@ -10,12 +10,13 @@ import wave
 
 
 class StashManager:
-    def __init__(self, condition):
+    def __init__(self, condition, item_manager):
         self.url = None
         # self.condition = threading.Condition()
         self.condition = condition
         self.stash = None
         self.persist = True
+        self.item_manager = item_manager
 
     def acquire_latest_id(self):
         stats = requests.get("http://poe.ninja/stats")
@@ -28,17 +29,11 @@ class StashManager:
         response = json.loads(response.content)
 
         ninja_id = self.acquire_new_id()
-        split_ninja_id = ninja_id.split('-')
-        last_section_id = ninja_id[len(split_ninja_id) - 1]
-        response_id = response["next_change_id"].split('-')
-        last_response_id = response_id[len(response_id) - 1]
-
-        # ninja_next_change_id = requests.get("http://api.poe.ninja/api/Data/GetStats")
-        # ninja_next_change_id = json.loads(ninja_next_change_id)["nextChangeId"]
         if "error" not in response:
             self.stash = response
-            if int(last_section_id) - int(last_response_id) > 30:
-                self.stash["next_change_id"] = ninja_id
+            # print(int(last_section_id) - int(last_response_id))
+            print("ninja id: ", ninja_id)
+            self.stash["next_change_id"] = ninja_id
             self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
             print(self.stash["next_change_id"])
         else:
@@ -56,6 +51,7 @@ class StashManager:
             with cond:
                 self.acquire_stash_sync(self.url)
                 queue.put(self.stash)
+                print("Searching for: ", self.item_manager.get_items())
                 cond.notifyAll()
                 time.sleep(0.5)
 

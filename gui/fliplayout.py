@@ -31,7 +31,7 @@ class FlipLayout:
         self.init_stash_url_input(condition, queue)
         self.init_items()
         self.init_item_entry()
-        self.init_get_stash_button(condition, queue)
+        # self.init_get_stash_button(condition, queue)
         # entry.grid(column=0, row=1, columnspan=2)
 
     def init_item_entry(self):
@@ -74,6 +74,8 @@ class FlipLayout:
         latest_url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + latest_change_id
         t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(condition, latest_url, queue))
         t1.start()
+        t2 = threading.Thread(name="t2", target=self.stash_manager.get_stash, args=(condition, queue,))
+        Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
         stash_url_input.destroy()
 
     def add_to_list(self, item_name):
@@ -85,8 +87,8 @@ class FlipLayout:
         latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats"))["nextChangeId"]
 
 
-    def init_get_stash_button(self, cond, queue):
-        t2 = threading.Thread(name="t2", target=self.stash_manager.get_stash, args=(cond, queue,))
-        Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
-        return
+    # def init_get_stash_button(self, cond, queue):
+    #     t2 = threading.Thread(name="t2", target=self.stash_manager.get_stash, args=(cond, queue,))
+    #     Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
+    #     return
 

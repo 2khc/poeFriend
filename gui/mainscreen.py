@@ -20,10 +20,11 @@ class MainScreen:
         mainframe.columnconfigure(0, weight=1)
         mainframe.rowconfigure(0, weight=1)
 
+        item_manager = ItemManager()
         default_layout = FlipLayout(
             mainframe,
-            item_manager=ItemManager(),
-            stash_manager=StashManager(threading.Condition())
+            item_manager=item_manager,
+            stash_manager=StashManager(threading.Condition(), item_manager)
         )
 
         self.root.mainloop()
