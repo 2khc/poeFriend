@@ -63,6 +63,7 @@ class FlipLayout:
 
     def init_stash_url_input(self, condition, queue):
         stash_url_input = Toplevel(self.mainframe)
+        stash_url_input.attributes("-topmost", True)
         text = "Click on the button besides this to copy a link to your clipboard."
         text2 = "Follow that link, then click on the long number to get the latest stash update."
         text3 = "Copy the url and paste it below."

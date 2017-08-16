@@ -19,7 +19,7 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(name="poeFriend",
-      version="0.1",
+      version="0.2",
       description="My GUI application!",
       options={"build_exe": build_exe_options},
       executables=[Executable("__main__.py", base=base)])

@@ -4,3 +4,5 @@
 .idea/modules.xml
 .idea/workspace.xml
 build/
+.idea/vcs.xml
+*.pyc

@@ -4,8 +4,9 @@ import requests
 import json
 import threading
 import logging
-from multiprocessing import pool
+from multiprocessing import Pool
 import time
+import wave
 
 class StashManager:
     def __init__(self, condition):
@@ -14,6 +15,13 @@ class StashManager:
         self.condition = condition
         self.stash = None
         self.persist = True
+        # name = glob.glob("alert.wav")
+        # self.song = AudioSegment.from_wav("assets/alert.wav")
+        # play(self.song)
+        # winsound.PlaySound("", winsound.SND_ALIAS)
+        # asd = wave.open("assets/alert.wav")
+        # winsound.Beep(400, 150)
+        # self.mp_pool = Pool(process=2)
 
     def acquire_latest_id(self):
         stats = requests.get("http://poe.ninja/stats")
@@ -38,7 +46,7 @@ class StashManager:
                 self.acquire_stash_sync(self.url)
                 queue.put(self.stash)
                 cond.notifyAll()
-                time.sleep(0.5)
+                time.sleep(1)
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -65,17 +73,17 @@ class StashManager:
                                 print("found a blackheart")
                         elif item["typeLine"]:
                             item_name = item["typeLine"]
-                            if item_name == "The Dapper Prodigy" and "note" in item:
+                            if item_name == "The Dapper Prodigy" and "note" in item and item["league"] == "Harbinger":
                                 # print("found Dapper for ", item["note"], " in league: ", item["league"])
                                 print(item["note"])
                                 note = item["note"].split(" ")
-                                if note[2] == "chaos" and int(note[1]) <= 10:
+                                if note[2] == "chaos" and int(note[1]) <= 9:
                                     whisper_message = "@" + stash["lastCharacterName"] + " Hi, I would like to buy your " \
                                                       + item_name + " for " + note[1] + " " + note[2] + " in "\
                                                       + item["league"] + "(stash tab " + "\""+stash["stash"] + "\";"\
                                                       + "position: left " + str(item["x"]) + ", top " + str(item["y"]) + ")"
                                     pyperclip.copy(whisper_message)
-                                    winsound.Beep(3000, 2000)
+                                    winsound.Beep(400, 150)
                                     print(whisper_message)
                                 # @Perry_Berry Hi, I would like to buy your The Dapper Prodigy listed for 9 chaos in Harbinger (stash tab "~b/o 3 chaos"; position: left 10, top 12)
                 # return self.stashBlackheart
