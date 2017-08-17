@@ -3,7 +3,7 @@ import json
 
 class ItemManager:
     def __init__(self):
-        self.items = []
+        self.items = {}
         self.url = "http://pathofexile.gamepedia.com/api.php"
 
     def get_uniques(self):
@@ -23,8 +23,9 @@ class ItemManager:
         print(json.loads(r.content))
         return response
 
-    def add_item(self, item_name):
-        self.items.append(item_name)
+    def add_item(self, item_name, item_price, currency):
+        # self.items.append(item_name)
+        self.items[item_name.lower()] = [item_price, currency]
         print("Adding %s", self.items)
 
     def get_items(self):

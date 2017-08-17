@@ -37,18 +37,25 @@ class FlipLayout:
     def init_item_entry(self):
         item_name = StringVar()
         item_price_threshold = DoubleVar()
+        price_currency = StringVar()
+        preset_currency = ('chaos', 'exa', 'alch', 'fuse')
+
         item_name_label = Label(self.mainframe, text="Item Name")
         item_price_threshold_label = Label(self.mainframe, text="Price Limit")
         item_name_entry = Entry(self.mainframe, textvariable=item_name)
         # Item entry
         threshold_price_entry = Entry(self.mainframe, textvariable=item_price_threshold)
-        add_button = Button(self.mainframe, text="Add Item", command=lambda: self.add_to_list(item_name))
+        price_currency_selection = Combobox(self.mainframe, textvariable=price_currency)
+        price_currency_selection['values'] = preset_currency
+        price_currency_selection['state'] = 'readonly'
+        add_button = Button(self.mainframe, text="Add Item", command=lambda: self.add_to_list(item_name.get(), item_price_threshold.get(), price_currency_selection.get()))
 
         item_name_label.grid(column=0, row=7)
         item_price_threshold_label.grid(column=3, row=7)
 
         item_name_entry.grid(column=0, row=8, columnspan=3)
         threshold_price_entry.grid(column=3, row=8, columnspan=1)
+        price_currency_selection.grid(column=4, row=8, columnspan=1)
         add_button.grid(column=5, row=8, columnspan=1)
 
     def init_items(self):
@@ -75,12 +82,13 @@ class FlipLayout:
         t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(condition, latest_url, queue))
         t1.start()
         t2 = threading.Thread(name="t2", target=self.stash_manager.get_stash, args=(condition, queue,))
-        Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
+        t2.start()
+        # Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
         stash_url_input.destroy()
 
-    def add_to_list(self, item_name):
-        self.item_manager.add_item(item_name.get())
-        self.item_list.set(value=self.item_manager.get_items())
+    def add_to_list(self, item_name, price, currency):
+        self.item_manager.add_item(item_name, price, currency)
+        self.item_list.set(value=list(self.item_manager.get_items().keys()))
 
     def save_latest_url(self, window, latest_url, cond, queue):
         self.stash_manager.set_url(latest_url)

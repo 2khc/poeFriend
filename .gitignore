@@ -7,3 +7,6 @@ build/
 .idea/vcs.xml
 *.pyc
 *.pyc
+*.pyc
+__pycache__/
+_pycache_/
