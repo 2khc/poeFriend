@@ -36,14 +36,22 @@ class StashManager:
             self.stash["next_change_id"] = ninja_id
             self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
             print(self.stash["next_change_id"])
+            self.previous_stash = self.stash
+            print(queue.qsize())
             return self.stash
         else:
             time.sleep(3)
+            if queue.full():
+                print("FULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
             # while not queue.empty():
             #     queue.get()
+            # if self.previous_stash["next_change_id"] == response["next_change_id"]:
+            while not queue.empty():
+                print("emptying queue")
+                queue.get()
+
             self.url = self.get_new_latest_url()
-            return False
-            # queue.
+            return False # queue.
 
     def set_url(self, url):
         self.url = url
@@ -52,13 +60,15 @@ class StashManager:
         logging.debug("Syncing from poe")
         self.url = stash_url
         while self.persist:
-            with cond:
-                new_stash = self.acquire_stash_sync(self.url, queue)
-                if new_stash:
-                    queue.put(self.stash)
-                # print("Searching for: ", self.item_manager.get_items())
-                cond.notifyAll()
-                time.sleep(0.5)
+            # with cond:
+            new_stash = self.acquire_stash_sync(self.url, queue)
+            if new_stash:
+                print("adding to queue")
+                queue.put(new_stash)
+                print(queue.qsize())
+            # print("Searching for: ", self.item_manager.get_items())
+            # cond.notifyAll()
+            time.sleep(0.5)
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -66,13 +76,13 @@ class StashManager:
 
     def get_stash(self, cond, queue):
         logging.debug("Starting get_stash thread.")
-        t = threading.currentThread()
+        # t = threading.currentThread()
 
         while self.persist:
             if queue.empty():
                 continue
 
-            print("something: " + queue.get()["next_change_id"])
+            # print("something: " + queue.get()["next_change_id"])
             target_items = self.item_manager.get_items()
 
             stash_data = queue.get()["stashes"]
