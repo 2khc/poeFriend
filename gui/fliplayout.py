@@ -16,6 +16,8 @@ class FlipLayout:
         self.init_ui()
 
     def init_ui(self):
+        queue_max_size = 10
+
         watched_items_label = Label(self.mainframe, text="Followed Items:")
         list_box = Listbox(self.mainframe, listvariable=self.item_list)
         # Label
@@ -25,7 +27,7 @@ class FlipLayout:
         list_box.grid(column=1, row=1, columnspan=4, rowspan=6)
 
         condition = threading.Condition()
-        queue = Queue()
+        queue = Queue(queue_max_size)
         executor = ThreadPoolExecutor(max_workers=2)
 
         self.init_stash_url_input(condition, queue)

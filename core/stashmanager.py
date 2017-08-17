@@ -24,7 +24,7 @@ class StashManager:
         print("\n")
         return
 
-    def acquire_stash_sync(self, stash_url):
+    def acquire_stash_sync(self, stash_url, queue):
         response = requests.get(stash_url)
         response = json.loads(response.content)
 
@@ -36,8 +36,14 @@ class StashManager:
             self.stash["next_change_id"] = ninja_id
             self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
             print(self.stash["next_change_id"])
+            return self.stash
         else:
-            time.sleep(1)
+            time.sleep(3)
+            # while not queue.empty():
+            #     queue.get()
+            self.url = self.get_new_latest_url()
+            return False
+            # queue.
 
     def set_url(self, url):
         self.url = url
@@ -47,8 +53,9 @@ class StashManager:
         self.url = stash_url
         while self.persist:
             with cond:
-                self.acquire_stash_sync(self.url)
-                queue.put(self.stash)
+                new_stash = self.acquire_stash_sync(self.url, queue)
+                if new_stash:
+                    queue.put(self.stash)
                 # print("Searching for: ", self.item_manager.get_items())
                 cond.notifyAll()
                 time.sleep(0.5)
@@ -62,8 +69,12 @@ class StashManager:
         t = threading.currentThread()
 
         while self.persist:
+            if queue.empty():
+                continue
+
             print("something: " + queue.get()["next_change_id"])
             target_items = self.item_manager.get_items()
+
             stash_data = queue.get()["stashes"]
             for stash in stash_data:
                 if stash["items"]:
@@ -80,7 +91,7 @@ class StashManager:
                                 item_name = item["typeLine"]
                                 lowercase_item_name = item_name.lower()
                                 # print(item_name)
-                                if  lowercase_item_name in target_items and "note" in item:
+                                if lowercase_item_name in target_items and "note" in item:
                                     print("foundfdounfdoufn note;", item["note"])
                                     self.build_buy_message(item, item_name, stash, target_items[lowercase_item_name][0],
                                                            target_items[lowercase_item_name][1])
@@ -103,3 +114,6 @@ class StashManager:
 
     def acquire_new_id(self):
         return json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]
+
+    def get_new_latest_url(self):
+        return "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.acquire_new_id()
