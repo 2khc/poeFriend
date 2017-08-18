@@ -34,24 +34,20 @@ class StashManager:
             # print(int(last_section_id) - int(last_response_id))
             print("ninja id: ", ninja_id)
             self.stash["next_change_id"] = ninja_id
-            self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.stash["next_change_id"]
+            self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + ninja_id
             print(self.stash["next_change_id"])
             self.previous_stash = self.stash
-            print(queue.qsize())
             return self.stash
         else:
             time.sleep(3)
-            if queue.full():
-                print("FULLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
             # while not queue.empty():
             #     queue.get()
-            # if self.previous_stash["next_change_id"] == response["next_change_id"]:
             while not queue.empty():
-                print("emptying queue")
                 queue.get()
 
             self.url = self.get_new_latest_url()
-            return False # queue.
+            return False
+
 
     def set_url(self, url):
         self.url = url
