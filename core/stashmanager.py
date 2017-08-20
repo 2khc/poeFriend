@@ -7,6 +7,9 @@ import logging
 from multiprocessing import Pool
 import time
 import wave
+import sys
+import logging
+import logging.handlers
 
 
 class StashManager:
@@ -17,6 +20,15 @@ class StashManager:
         self.stash = None
         self.persist = True
         self.item_manager = item_manager
+
+        # logging
+        self.LOG_NAME = "stash_manager_log.out"
+        self.logger = logging.getLogger("myLogger")
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.handlers.RotatingFileHandler(
+            self.LOG_NAME, maxBytes=80, backupCount=5
+        )
+        self.logger.addHandler(handler)
 
     def acquire_latest_id(self):
         stats = requests.get("http://poe.ninja/stats")
@@ -36,12 +48,13 @@ class StashManager:
             self.stash["next_change_id"] = ninja_id
             self.url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + ninja_id
             print(self.stash["next_change_id"])
-            self.previous_stash = self.stash
+            # self.previous_stash = self.stash
             return self.stash
         else:
             time.sleep(3)
             # while not queue.empty():
             #     queue.get()
+            print("blocked")
             while not queue.empty():
                 queue.get()
 
@@ -64,7 +77,7 @@ class StashManager:
                 print(queue.qsize())
             # print("Searching for: ", self.item_manager.get_items())
             # cond.notifyAll()
-            time.sleep(0.5)
+            time.sleep(1)
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -75,42 +88,65 @@ class StashManager:
         # t = threading.currentThread()
 
         while self.persist:
-            if queue.empty():
-                continue
+            try:
+                if queue.empty():
+                    continue
 
-            # print("something: " + queue.get()["next_change_id"])
-            target_items = self.item_manager.get_items()
+                # print("something: " + queue.get()["next_change_id"])
+                target_items = self.item_manager.get_items()
 
-            stash_data = queue.get()["stashes"]
-            for stash in stash_data:
-                if stash["items"]:
-                    for item in stash["items"]:
-                        if item["league"] == "Harbinger":
-                            if len(item["name"].split("<<set:S>>")) == 2:
-                                item_name = item["name"].split("<<set:S>>")[1]
-                                lowercase_item_name = item_name.lower()
-                                if lowercase_item_name in target_items and "note" in item:
-                                    # print("Found: ", item_name, ". Price: ", item["note"])
-                                    self.build_buy_message(item, item_name, stash, target_items[lowercase_item_name][0],
-                                                           target_items[lowercase_item_name][1])
-                            elif item["typeLine"]:
-                                item_name = item["typeLine"]
-                                lowercase_item_name = item_name.lower()
-                                # print(item_name)
-                                if lowercase_item_name in target_items and "note" in item:
-                                    print("foundfdounfdoufn note;", item["note"])
-                                    self.build_buy_message(item, item_name, stash, target_items[lowercase_item_name][0],
-                                                           target_items[lowercase_item_name][1])
+                stash_data = queue.get()["stashes"]
+                for stash in stash_data:
+                    if stash["items"]:
+                        stash_buyout = stash["stash"].split(" ")
+
+                        for item in stash["items"]:
+                            is_individual = None
+                            if "note" in item:
+                                is_individual = True
+                            else:
+                                is_individual = False
+
+                            if item["league"] == "Harbinger":
+                                if len(item["name"].split("<<set:S>>")) == 2:
+                                    item_name = item["name"].split("<<set:S>>")[1]
+                                    lowercase_item_name = item_name.lower()
+
+                                    if lowercase_item_name in target_items and (is_individual or stash_buyout[0] == "~b/o"):
+                                        # print("Found: ", item_name, ". Price: ", item["note"])
+                                        self.build_buy_message(is_individual, item, item_name, stash, target_items[lowercase_item_name][0],
+                                                               target_items[lowercase_item_name][1])
+                                elif item["typeLine"]:
+                                    item_name = item["typeLine"]
+                                    lowercase_item_name = item_name.lower()
+                                    # print(item_name)
+                                    if lowercase_item_name in target_items and (is_individual or stash_buyout[0] == "~b/o"):
+                                        # print("foundfdounfdoufn note;", item["note"])
+                                        self.build_buy_message(is_individual, item, item_name, stash, target_items[lowercase_item_name][0],
+                                                               target_items[lowercase_item_name][1])
+            except Exception:
+                self.logger.debug(sys.exc_info())
+
 
     @staticmethod
-    def build_buy_message(item, item_name, stash, price, currency):
+    def build_buy_message(is_individual, item, item_name, stash, price, currency):
         # print("found Dapper for ", item["note"], " in league: ", item["league"])
         # print(item["note"])
-        note = item["note"].split(" ")
-        if note[2] == currency and int(note[1]) <= price:
+        offer_price = None
+        offer_price = None
+        if is_individual:
+            note = item["note"].split(" ")
+            offer_price = note[1]
+            offer_currency = note[2]
+        else:
+            stash_price = stash["stash"].split(" ")
+            offer_price = stash_price[1]
+            offer_currency = stash_price[2]
+
+        if offer_currency == currency and int(offer_price) <= price:
             whisper_message = "@" + stash[
                 "lastCharacterName"] + " Hi, I would like to buy your " \
-                              + item_name + " for " + note[1] + " " + note[2] + " in " \
+                              + item_name + " for " + offer_price + " " + offer_currency + " in " \
                               + item["league"] + "(stash tab " + "\"" + stash["stash"] + "\";" \
                               + "position: left " + str(item["x"]) + ", top " + str(
                 item["y"]) + ")"
