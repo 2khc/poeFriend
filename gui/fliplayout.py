@@ -57,14 +57,21 @@ class FlipLayout:
         add_button = Button(self.mainframe, text="Add Item",
                             command=lambda: self.add_to_list(item_name.get(), item_price_threshold.get(),
                                                              price_currency_selection.get()))
+        delete_button = Button(self.mainframe, text="Delete Item",
+                               command=lambda: self.remove_from_list(item_name.get()))
 
         # Add listener to the list box
         def on_list_box_select(*args):
             index = list_box.curselection()
+            item_string = list_box.get(index)
+            item_data = self.item_manager.get_items()[item_string]
+            item_name.set(value=item_string)
+            item_price_threshold.set(value=item_data[0])
+            price_currency_selection.set(value=item_data[1])
             print(index)
             print("shit")
 
-        list_box.bind('<<ListBoxSelect>>', on_list_box_select)
+        list_box.bind("<<ListBoxSelect>>", on_list_box_select)
         list_box.bind("<Double-1>", on_list_box_select)
 
         item_name_label.grid(column=0, row=7)
@@ -77,6 +84,7 @@ class FlipLayout:
         threshold_price_entry.grid(column=3, row=8, columnspan=1)
         price_currency_selection.grid(column=4, row=8, columnspan=1)
         add_button.grid(column=5, row=8, columnspan=1)
+        delete_button.grid(column=0, row=4)
 
     def init_items(self):
         sync_items_button = Button(self.mainframe, text="sync", command=self.item_manager.get_uniques)
@@ -109,6 +117,10 @@ class FlipLayout:
 
     def add_to_list(self, item_name, price, currency):
         self.item_manager.add_item(item_name, price, currency)
+        self.item_list.set(value=list(self.item_manager.get_items().keys()))
+
+    def remove_from_list(self, item_name):
+        self.item_manager.remove_item(item_name)
         self.item_list.set(value=list(self.item_manager.get_items().keys()))
 
     def save_latest_url(self, window, latest_url, cond, queue):
