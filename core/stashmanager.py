@@ -61,7 +61,6 @@ class StashManager:
             self.url = self.get_new_latest_url()
             return False
 
-
     def set_url(self, url):
         self.url = url
 
@@ -70,14 +69,15 @@ class StashManager:
         self.url = stash_url
         while self.persist:
             # with cond:
-            new_stash = self.acquire_stash_sync(self.url, queue)
-            if new_stash:
-                print("adding to queue")
-                queue.put(new_stash)
-                print(queue.qsize())
-            # print("Searching for: ", self.item_manager.get_items())
-            # cond.notifyAll()
-            time.sleep(1)
+            try:
+                new_stash = self.acquire_stash_sync(self.url, queue)
+                if new_stash:
+                    print("adding to queue")
+                    queue.put(new_stash)
+                    print(queue.qsize())
+                time.sleep(1)
+            except Exception:
+                self.logger.debug(sys.exc_info())
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -112,21 +112,48 @@ class StashManager:
                                     item_name = item["name"].split("<<set:S>>")[1]
                                     lowercase_item_name = item_name.lower()
 
-                                    if lowercase_item_name in target_items and (is_individual or stash_buyout[0] == "~b/o"):
+                                    if lowercase_item_name in target_items and (
+                                                is_individual or stash_buyout[0] == "~b/o") \
+                                            and self.str_to_bool(target_items[lowercase_item_name][3]) == item[
+                                                "corrupted"] \
+                                            and self.str_to_bool(
+                                                target_items[lowercase_item_name][2]) == self.is_six_linked(
+                                                item["sockets"], 6):
                                         # print("Found: ", item_name, ". Price: ", item["note"])
-                                        self.build_buy_message(is_individual, item, item_name, stash, target_items[lowercase_item_name][0],
+                                        self.build_buy_message(is_individual, item, item_name, stash,
+                                                               target_items[lowercase_item_name][0],
                                                                target_items[lowercase_item_name][1])
                                 elif item["typeLine"]:
                                     item_name = item["typeLine"]
                                     lowercase_item_name = item_name.lower()
                                     # print(item_name)
-                                    if lowercase_item_name in target_items and (is_individual or stash_buyout[0] == "~b/o"):
+                                    if lowercase_item_name in target_items and (
+                                                is_individual or stash_buyout[0] == "~b/o"):
                                         # print("foundfdounfdoufn note;", item["note"])
-                                        self.build_buy_message(is_individual, item, item_name, stash, target_items[lowercase_item_name][0],
+                                        self.build_buy_message(is_individual, item, item_name, stash,
+                                                               target_items[lowercase_item_name][0],
                                                                target_items[lowercase_item_name][1])
             except Exception:
                 self.logger.debug(sys.exc_info())
 
+    def str_to_bool(self, text):
+        if text == "True":
+            return True
+        return False
+
+    def is_six_linked(self, sockets, links):
+        if len(sockets) >= links:
+            count = {}
+            for socket in sockets:
+                key = str(socket["group"])
+                if key in count:
+                    count[key] += 1
+                else:
+                    count[key] = 1
+
+                if count[key] == links:
+                    return True
+        return False
 
     @staticmethod
     def build_buy_message(is_individual, item, item_name, stash, price, currency):
@@ -142,6 +169,9 @@ class StashManager:
             stash_price = stash["stash"].split(" ")
             offer_price = stash_price[1]
             offer_currency = stash_price[2]
+
+        if offer_price == 0:
+            return
 
         if offer_currency == currency and int(offer_price) <= price:
             whisper_message = "@" + stash[

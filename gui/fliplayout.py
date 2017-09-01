@@ -19,14 +19,22 @@ class FlipLayout:
     def init_ui(self):
         queue_max_size = 10
 
-        watched_items_label = Label(self.mainframe, text="Followed Items:")
-        list_box = Listbox(self.mainframe, name="list_box", listvariable=self.item_list)
+        show_info_frame = Frame(self.mainframe, borderwidth=5,relief=SUNKEN)
+        show_info_frame.grid(column=1, row=1,columnspan=4,rowspan=6)
 
+        scrollbar = Scrollbar(show_info_frame)
+        scrollbar.grid(column=4, sticky=E )
+        watched_items_label = Label(self.mainframe, text="Followed Items:")
+        list_box = Listbox(show_info_frame, name="list_box", listvariable=self.item_list, yscrollcommand=scrollbar.set)
+
+        scrollbar.config(command=list_box.yview)
         # Label
         title_label = Label(self.mainframe, text="poeFriend")
         title_label.grid(column=3, row=0)
         watched_items_label.grid(column=0, row=1, columnspan=1)
-        list_box.grid(column=1, row=1, columnspan=4, rowspan=6)
+        # list_box.grid(column=1, row=1, columnspan=4, rowspan=6)
+        list_box.grid(column=0, row=0, columnspan=3,sticky=(N,W))
+# u        list_box.pack()
         # list_box.bind("<ListBoxSelect>", )
 
 
@@ -43,30 +51,53 @@ class FlipLayout:
     def init_item_entry(self, list_box):
         item_name = StringVar()
         item_price_threshold = DoubleVar()
-        price_currency = StringVar()
-        preset_currency = ('chaos', 'exa', 'alch', 'fuse')
+        self.price_currency = StringVar()
+        self.is_corrupted = BooleanVar()
+        self.is_six_linked = BooleanVar()
+
+        preset_currency = ['chaos', 'exa', 'alch', 'fuse']
+        preset_selections = (False, True)
 
         item_name_label = Label(self.mainframe, text="Item Name")
         item_price_threshold_label = Label(self.mainframe, text="Price Limit")
+        is_corrupted_label = Label(self.mainframe, text="Corrupted?")
+        is_six_link_label  = Label(self.mainframe, text="6-linked?")
         item_name_entry = Entry(self.mainframe, textvariable=item_name)
-        # Item entry
+
+
+        # Item entry stuff here
+        # ==============================================================================================
+        # ==============================================================================================
         threshold_price_entry = Entry(self.mainframe, textvariable=item_price_threshold)
-        price_currency_selection = Combobox(self.mainframe, textvariable=price_currency)
-        price_currency_selection['values'] = preset_currency
+        price_currency_selection = Combobox(self.mainframe, textvariable=self.price_currency, values=preset_currency)
         price_currency_selection['state'] = 'readonly'
+        price_currency_selection.current(0)
+
+        corrupted_selection = Combobox(self.mainframe, textvariable=self.is_corrupted, values=preset_selections)
+        corrupted_selection["state"] = "readonly"
+        corrupted_selection.current(0)
+
+        six_link_selection = Combobox(self.mainframe, textvariable=self.is_six_linked)
+        six_link_selection['values'] = preset_selections
+        six_link_selection["state"] = "readonly"
+        six_link_selection.current(0)
+
         add_button = Button(self.mainframe, text="Add Item",
                             command=lambda: self.add_to_list(item_name.get(), item_price_threshold.get(),
-                                                             price_currency_selection.get()))
+                                                             price_currency_selection.get(), six_link_selection.get(), corrupted_selection.get()))
         delete_button = Button(self.mainframe, text="Delete Item",
                                command=lambda: self.remove_from_list(item_name.get()))
 
         # Add listener to the list box
+        # ===================================================================
         def on_list_box_select(*args):
             index = list_box.curselection()
             item_string = list_box.get(index)
             item_data = self.item_manager.get_items()[item_string]
             item_name.set(value=item_string)
             item_price_threshold.set(value=item_data[0])
+            six_link_selection.set(value=item_data[2])
+            corrupted_selection.set(value=item_data[3])
             price_currency_selection.set(value=item_data[1])
             print(index)
             print("shit")
@@ -76,14 +107,21 @@ class FlipLayout:
 
         item_name_label.grid(column=0, row=7)
         item_price_threshold_label.grid(column=3, row=7)
+        is_six_link_label.grid(column=5, row=7)
+        is_corrupted_label.grid(column=6, row=7)
 
         # Remove item stuff
         # remove_button = Button(self.mainframe, text="Remove", command=lambda: self.remove_item(item_name))
 
+        # Set items to grid
+        # ==============================================================================================
+        # ==============================================================================================
         item_name_entry.grid(column=0, row=8, columnspan=3)
         threshold_price_entry.grid(column=3, row=8, columnspan=1)
         price_currency_selection.grid(column=4, row=8, columnspan=1)
-        add_button.grid(column=5, row=8, columnspan=1)
+        six_link_selection.grid(column=5, row=8, columnspan=1)
+        corrupted_selection.grid(column=6, row=8, columnspan=1)
+        add_button.grid(column=7, row=8, columnspan=1)
         delete_button.grid(column=0, row=4)
 
     def init_items(self):
@@ -115,8 +153,8 @@ class FlipLayout:
         # Button(self.mainframe, text="Start Scan Thread", command=t2.start).grid(column=0,row=3)
         stash_url_input.destroy()
 
-    def add_to_list(self, item_name, price, currency):
-        self.item_manager.add_item(item_name, price, currency)
+    def add_to_list(self, item_name, price, currency, is_six_link, is_corrupted):
+        self.item_manager.add_item(item_name, price, currency, is_six_link, is_corrupted)
         self.item_list.set(value=list(self.item_manager.get_items().keys()))
 
     def remove_from_list(self, item_name):

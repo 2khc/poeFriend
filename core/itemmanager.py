@@ -26,9 +26,9 @@ class ItemManager:
         print(json.loads(r.content))
         return response
 
-    def add_item(self, item_name, item_price, currency):
+    def add_item(self, item_name, item_price, currency, is_six_link, is_corrupted):
         # self.items.append(item_name)
-        self.items[item_name.lower()] = [item_price, currency]
+        self.items[item_name.lower()] = [item_price, currency, is_six_link, is_corrupted]
         self.save_json()
         print("Adding %s", self.items)
 
@@ -37,6 +37,7 @@ class ItemManager:
 
     def remove_item(self, item_name):
         self.items.pop(item_name)
+        self.save_json()
 
     def save_json(self):
         with open(self.items_file, "w") as outfile:
