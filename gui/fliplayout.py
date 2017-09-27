@@ -144,7 +144,8 @@ class FlipLayout:
                command=lambda: self.save_latest_url(stash_url_input, latest_url.get(), condition, queue)).pack()
 
         self.stash_manager.set_url(latest_url)
-        latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]
+        # latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["next_change_id"]
+        latest_change_id = self.stash_manager.acquire_new_id()
         latest_url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + latest_change_id
         t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(condition, latest_url, queue))
         t1.start()
