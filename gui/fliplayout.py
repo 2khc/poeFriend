@@ -118,7 +118,7 @@ class FlipLayout:
         # ==============================================================================================
         item_name_entry.grid(column=0, row=8, columnspan=3)
         threshold_price_entry.grid(column=3, row=8, columnspan=1)
-        price_currency_selection.grid(column=4, row=8, columnspan=1)
+        price_currency_selection.grid(column=4, row=8, columnspan=1)    
         six_link_selection.grid(column=5, row=8, columnspan=1)
         corrupted_selection.grid(column=6, row=8, columnspan=1)
         add_button.grid(column=7, row=8, columnspan=1)
@@ -144,7 +144,7 @@ class FlipLayout:
                command=lambda: self.save_latest_url(stash_url_input, latest_url.get(), condition, queue)).pack()
 
         self.stash_manager.set_url(latest_url)
-        latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]
+        latest_change_id = json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["next_change_id"]
         latest_url = "http://www.pathofexile.com/api/public-stash-tabs?id=" + latest_change_id
         t1 = threading.Thread(name="t1", target=self.stash_manager.sync, args=(condition, latest_url, queue))
         t1.start()
