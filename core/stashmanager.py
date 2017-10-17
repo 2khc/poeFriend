@@ -78,6 +78,7 @@ class StashManager:
                 time.sleep(1)
             except Exception:
                 self.logger.debug(sys.exc_info())
+                # print("this")
 
     def single_refresh(self, stash_url):
         self.acquire_stash_sync(stash_url)
@@ -185,7 +186,7 @@ class StashManager:
             print(whisper_message)
 
     def acquire_new_id(self):
-        return json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["nextChangeId"]
+        return json.loads(requests.get("http://api.poe.ninja/api/Data/GetStats").content)["next_change_id"]
 
     def get_new_latest_url(self):
         return "http://www.pathofexile.com/api/public-stash-tabs?id=" + self.acquire_new_id()

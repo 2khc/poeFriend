@@ -2,11 +2,8 @@ from tkinter import *
 from tkinter import ttk
 from .fliplayout import FlipLayout
 import threading
-# from . import FlipLayout
-# from gui import FlipLayout
-
-# from tkinter import *
 from core import *
+
 
 class MainScreen:
     def __init__(self):
